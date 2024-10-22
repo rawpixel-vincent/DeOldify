@@ -267,18 +267,18 @@ def in_channels(m:nn.Module) -> List[int]:
 
 class ModelOnCPU():
     "A context manager to evaluate `model` on the CPU inside."
-    def __init__(self, model:nn.Module): self.model = model       
+    def __init__(self, model:nn.Module): self.model = model
     def __enter__(self):
         self.device = one_param(self.model).device
         return self.model.cpu()
     def __exit__(self, type, value, traceback):
         self.model = self.model.to(self.device)
-    
+
 class NoneReduceOnCPU():
     "A context manager to evaluate `loss_func` with none reduce and weights on the CPU inside."
-    def __init__(self, loss_func:LossFunction): 
+    def __init__(self, loss_func:LossFunction):
         self.loss_func,self.device,self.old_red = loss_func,None,None
-        
+
     def __enter__(self):
         if hasattr(self.loss_func, 'weight') and self.loss_func.weight is not None:
             self.device = self.loss_func.weight.device
@@ -288,11 +288,11 @@ class NoneReduceOnCPU():
             setattr(self.loss_func, 'reduction', 'none')
             return self.loss_func
         else: return partial(self.loss_func, reduction='none')
-        
+
     def __exit__(self, type, value, traceback):
         if self.device is not None:  self.loss_func.weight = self.loss_func.weight.to(self.device)
-        if self.old_red is not None: setattr(self.loss_func, 'reduction', self.old_red)    
-    
+        if self.old_red is not None: setattr(self.loss_func, 'reduction', self.old_red)
+
 def model_type(dtype):
     "Return the torch type corresponding to `dtype`."
     return (torch.float32 if np.issubdtype(dtype, np.floating) else
@@ -313,11 +313,11 @@ def _pca(x, k=2):
     return torch.mm(x,U[:,:k])
 torch.Tensor.pca = _pca
 
-def trange_of(x): 
+def trange_of(x):
     "Create a tensor from `range_of(x)`."
     return torch.arange(len(x))
 
-def to_np(x): 
+def to_np(x):
     "Convert a tensor to a numpy array."
     return x.data.cpu().numpy()
 
@@ -368,7 +368,7 @@ def uniform_int(low:int, high:int, size:Optional[List[int]]=None)->IntOrTensor:
     "Generate int or tensor `size` of ints between `low` and `high` (included)."
     return random.randint(low,high) if size is None else torch.randint(low,high+1,size)
 
-def one_param(m: nn.Module)->Tensor: 
+def one_param(m: nn.Module)->Tensor:
     "Return the first parameter of `m`."
     return next(m.parameters())
 
@@ -391,7 +391,7 @@ def flatten_check(out:Tensor, targ:Tensor) -> Tensor:
     return out,targ
 
 #Monkey-patch nn.DataParallel.reset
-def _data_parallel_reset(self): 
+def _data_parallel_reset(self):
     if hasattr(self.module, 'reset'): self.module.reset()
 nn.DataParallel.reset = _data_parallel_reset
 
@@ -427,4 +427,3 @@ def np_func(f):
         return tensor(f(*nargs, **kwargs))
     functools.update_wrapper(_inner, f)
     return _inner
-

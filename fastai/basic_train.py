@@ -268,7 +268,7 @@ class Learner():
         if device is None: device = self.data.device
         elif isinstance(device, int): device = torch.device('cuda', device)
         source = self.path/self.model_dir/f'{file}.pth' if is_pathlike(file) else file
-        state = torch.load(source, map_location=device)
+        state = torch.load(source, map_location=device, weights_only=with_opt is None)
         if set(state.keys()) == {'model', 'opt'}:
             model_state = state['model']
             if remove_module: model_state = remove_module_load(model_state)
@@ -348,9 +348,9 @@ class Learner():
             else: xb,yb = self.data.one_batch(ds_type, detach=False, denorm=False)
             cb_handler = CallbackHandler(self.callbacks)
             xb,yb = cb_handler.on_batch_begin(xb,yb, train=False)
-            if not with_dropout: 
+            if not with_dropout:
                 preds = loss_batch(self.model.eval(), xb, yb, cb_handler=cb_handler)
-            else: 
+            else:
                 preds = loss_batch(self.model.eval().apply(self.apply_dropout), xb, yb, cb_handler=cb_handler)
             res = _loss_func2activ(self.loss_func)(preds[0])
             self.model.train(training)
@@ -590,7 +590,7 @@ class Recorder(LearnerCallback):
             values = self._split_list_val(values, skip_start, skip_end)
             ax.plot(val_iter, values)
             ax.set_ylabel(str(self.metrics_names[i]))
-            ax.set_xlabel('Batches processed')             
+            ax.set_xlabel('Batches processed')
         if ifnone(return_fig, defaults.return_fig): return fig
         if not IN_NOTEBOOK: plot_sixel(fig)
 

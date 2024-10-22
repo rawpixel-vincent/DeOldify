@@ -580,7 +580,7 @@ class LabelLists(ItemLists):
     def load_empty(cls, path:PathOrStr, fn:PathOrStr='export.pkl'):
         "Create a `LabelLists` with empty sets from the serialized file in `path/fn`."
         path = Path(path)
-        state = torch.load(open(path/fn, 'rb'))
+        state = torch.load(open(path/fn, 'rb'), weights_only=True)
         return LabelLists.load_state(path, state)
 
 def _check_kwargs(ds:ItemList, tfms:TfmList, **kwargs):
@@ -776,7 +776,7 @@ class MixedItem(ItemBase):
 class MixedItemList(ItemList):
 
     def __init__(self, item_lists, path:PathOrStr=None, label_cls:Callable=None, inner_df:Any=None,
-                 x:'ItemList'=None, ignore_empty:bool=False, processor=None):
+                 x:'ItemList'=None, ignore_empty:bool=True, processor=None):
         self.item_lists = item_lists
         if processor is None:
             default_procs = [[p(ds=il) for p in listify(il._processor)] for il in item_lists]

@@ -107,6 +107,7 @@ def gen_learner_deep(
         y_range=(-3.0, 3.0),
         loss_func=gen_loss,
         nf_factor=nf_factor,
+        pretrained=True,
     )
 
 

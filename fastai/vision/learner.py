@@ -140,10 +140,10 @@ def _cl_int_gradcam(self, idx, heatmap_thresh:int=16, image:bool=True):
     im,cl = self.learn.data.dl(DatasetType.Valid).dataset[idx]
     cl = int(cl)
     xb,_ = self.data.one_item(im, detach=False, denorm=False) #put into a minibatch of batch size = 1
-    with hook_output(m[0]) as hook_a: 
+    with hook_output(m[0]) as hook_a:
         with hook_output(m[0], grad=True) as hook_g:
             preds = m(xb)
-            preds[0,int(cl)].backward() 
+            preds[0,int(cl)].backward()
     acts  = hook_a.stored[0].cpu() #activation maps
     if (acts.shape[-1]*acts.shape[-2]) >= heatmap_thresh:
         grad = hook_g.stored[0][0].cpu()
@@ -180,7 +180,7 @@ def _cl_int_plot_top_losses(self, k, largest=True, figsize=(12,12), heatmap:bool
             mult = self.GradCAM(idx,heatmap_thresh,image=False)
             if mult is not None:
                 sz = list(im.shape[-2:])
-                axes.flat[i].imshow(mult, alpha=0.6, extent=(0,*sz[::-1],0), interpolation='bilinear', cmap='magma')                
+                axes.flat[i].imshow(mult, alpha=0.6, extent=(0,*sz[::-1],0), interpolation='bilinear', cmap='magma')
     if ifnone(return_fig, defaults.return_fig): return fig
 
 def _cl_int_plot_multi_top_losses(self, samples:int=3, figsize:Tuple[int,int]=(8,8), save_misclassified:bool=False):
@@ -228,7 +228,7 @@ def _cl_int_plot_multi_top_losses(self, samples:int=3, figsize:Tuple[int,int]=(8
 ClassificationInterpretation.from_learner          = _cl_int_from_learner
 ClassificationInterpretation.plot_top_losses       = _cl_int_plot_top_losses
 ClassificationInterpretation.plot_multi_top_losses = _cl_int_plot_multi_top_losses
- 
+
 
 def _learner_interpret(learn:Learner, ds_type:DatasetType=DatasetType.Valid, tta=False):
     "Create a `ClassificationInterpretation` object from `learner` on `ds_type` with `tta`."
