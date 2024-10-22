@@ -24,10 +24,10 @@ class BaseFilter(IFilter):
     def __init__(self, learn: Learner, stats: tuple = imagenet_stats):
         super().__init__()
         self.learn = learn
-        
+
         if not device_settings.is_gpu():
             self.learn.model = self.learn.model.cpu()
-        
+
         self.device = next(self.learn.model.parameters()).device
         self.norm, self.denorm = normalize_funcs(*stats)
 
@@ -38,7 +38,7 @@ class BaseFilter(IFilter):
         # a simple stretch to fit a square really makes a big difference in rendering quality/consistency.
         # I've tried padding to the square as well (reflect, symetric, constant, etc).  Not as good!
         targ_sz = (targ, targ)
-        return orig.resize(targ_sz, resample=PIL.Image.BILINEAR)
+        return orig.resize(targ_sz, resample=PilImage.Resampling.LANCZOS)
 
     def _get_model_ready_image(self, orig: PilImage, sz: int) -> PilImage:
         result = self._scale_to_square(orig, sz)
@@ -51,7 +51,7 @@ class BaseFilter(IFilter):
         x = x.to(self.device)
         x.div_(255)
         x, y = self.norm((x, x), do_x=True)
-        
+
         try:
             result = self.learn.pred_batch(
                 ds_type=DatasetType.Valid, batch=(x[None], y[None]), reconstruct=True
@@ -61,7 +61,7 @@ class BaseFilter(IFilter):
                 raise rerr
             logging.warn('Warning: render_factor was set too high, and out of memory error resulted. Returning original image.')
             return model_image
-            
+
         out = result[0]
         out = self.denorm(out.px, do_x=False)
         out = image2np(out * 255).astype(np.uint8)
@@ -69,7 +69,7 @@ class BaseFilter(IFilter):
 
     def _unsquare(self, image: PilImage, orig: PilImage) -> PilImage:
         targ_sz = orig.size
-        image = image.resize(targ_sz, resample=PIL.Image.BILINEAR)
+        image = image.resize(targ_sz, resample=PilImage.Resampling.LANCZOS)
         return image
 
 

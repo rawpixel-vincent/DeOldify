@@ -14,7 +14,7 @@ class ModelImageVisualizer:
     def get_filtered_image(
         self, image: Image, render_factor: int = None, post_process: bool = True,
     ) -> Image:
-        return self.filter.filter(image, image, render_factor=render_factor,post_process=post_process)
+        return self.filter.filter(image, image, render_factor=render_factor, post_process=post_process)
 
 
 
