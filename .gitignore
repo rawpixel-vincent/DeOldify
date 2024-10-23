@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+mmcv/checkpoints/
 
 # C extensions
 *.so
@@ -120,6 +121,6 @@ test_images/*.JPG
 test_images/*.PNG
 test_images/*.png
 test_images/*.jpeg
-test_images/*.JPEG 
+test_images/*.JPEG
 deoldify/.ipynb_checkpoints/*-checkpoint.py
 tmp*
