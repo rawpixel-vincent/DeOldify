@@ -24,7 +24,7 @@ if __name__ == '__main__':
     args = dict([
         ("config",'configs/deoldify_stable_configs.py'),
         ("checkpoint",'checkpoints/ColorizeStable_gen.pth'),
-        ("img",'a.webp'),
+        ("img",'b.jpg'),
         ("device",'cpu'),
         ("show",True),
         ("out",'d.jpg'),

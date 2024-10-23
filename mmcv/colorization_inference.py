@@ -87,9 +87,7 @@ def post_process(result, img_gray):
     results = results.float().clamp(min=0, max=1)
 
     # To PIL
-    out = (results.cpu().numpy()*255).astype('uint8').transpose(1, 2, 0)
-    out = Image.fromarray(out)
-
+    out = transforms.ToPILImage()(results)
     # img_gray = (img_gray.cpu().numpy()*255).astype('uint8').transpose(1, 2, 0)
     # img_gray = Image.fromarray(img_gray)
 
