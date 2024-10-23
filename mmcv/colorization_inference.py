@@ -95,6 +95,8 @@ def post_process(result, img_gray):
 
     # Resize
     orig_image = None
+    if isinstance(img_gray, Image.Image):
+        orig_image = img_gray.convert('RGB')
     if isinstance(img_gray, str):
         orig_image = PIL.Image.open(img_gray).convert('RGB')
     if isinstance(img_gray, np.ndarray):
@@ -111,6 +113,8 @@ def post_process(result, img_gray):
     # if isinstance(img_gray, np.ndarray):
     #     return np.asarray(final)[:, :, ::-1]
     # return None
+    if isinstance(img_gray, Image.Image):
+        return final
     if isinstance(img_gray, str):
         return transforms.ToTensor()(final)
     if isinstance(img_gray, np.ndarray):
@@ -159,6 +163,8 @@ def colorization_inference(model, img, device='cuda:0'):
 
     # prepare data
     data = None
+    if isinstance(img, Image.Image):
+        data = dict(img_gray=np.array(img))
     if isinstance(img, str):
         data = dict(img_gray_path=img)
     if isinstance(img, np.ndarray):
