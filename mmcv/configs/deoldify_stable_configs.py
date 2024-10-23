@@ -67,7 +67,7 @@ test_pipeline = [
     dict(
         type='Resize',
         keys=['img_gray'],
-        scale=(592, 592),
+        scale=(560, 560),
         keep_ratio=False,
         backend='pillow'
     ),
@@ -99,7 +99,7 @@ demo_pipeline = [
     dict(
         type='Resize',
         keys=['img_gray'],
-        scale=(592, 592),
+        scale=(560, 560),
         keep_ratio=False,
         backend='pillow'
     ),
