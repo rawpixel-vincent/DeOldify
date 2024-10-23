@@ -68,12 +68,27 @@ def denorm(x, mean, std):
     return x
 
 
-def overlay_color(generated_color_iamge, gray_image):
-    color_y, color_u, color_v = generated_color_iamge.convert("YCbCr").split()
+def overlay_color(generated_color_image, gray_image:Image.Image):
+    color_y, color_u, color_v = generated_color_image.convert("YCbCr").split()
     orig_y, orig_u, orig_v = gray_image.convert("YCbCr").split()
     final = Image.merge("YCbCr", (orig_y, color_u, color_v)).convert("RGB")
     return final
 
+
+def normalize(arr):
+    """
+    Linear normalization
+    http://en.wikipedia.org/wiki/Normalization_%28image_processing%29
+    """
+    arr = arr.astype('float')
+    # Do not touch the alpha channel
+    for i in range(3):
+        minval = arr[...,i].min()
+        maxval = arr[...,i].max()
+        if minval != maxval:
+            arr[...,i] -= minval
+            arr[...,i] *= (255.0/(maxval-minval))
+    return arr
 
 def post_process(result, img_gray):
     results = result['img_color_fake'].squeeze(0)
@@ -86,22 +101,31 @@ def post_process(result, img_gray):
     # clamp
     results = results.float().clamp(min=0, max=1)
 
+
     # To PIL
-    out = transforms.ToPILImage()(results)
+    out:Image.Image = transforms.ToPILImage()(results)
     # img_gray = (img_gray.cpu().numpy()*255).astype('uint8').transpose(1, 2, 0)
     # img_gray = Image.fromarray(img_gray)
 
     # Resize
-    orig_image = None
+    orig_image:Image.Image = None
     if isinstance(img_gray, str):
         orig_image = PIL.Image.open(img_gray).convert('RGB')
     if isinstance(img_gray, np.ndarray):
         orig_image = Image.fromarray(np.uint8(img_gray))
 
-    raw_color = out.resize(orig_image.size, resample=PIL.Image.BILINEAR)
+    raw_color = out.resize(orig_image.size, resample=PIL.Image.LANCZOS)
 
     # overlay color
     final = overlay_color(raw_color, orig_image)
+
+    # auto_contrast
+    final = mmcv.image.adjust_contrast(np.asarray(final), 0.9)
+    final = Image.fromarray(final)
+
+    #normalize
+    # final = normalize(np.asarray(final))
+    # final = Image.fromarray(final.astype('uint8'), 'RGB')
 
     # # return final
     # if isinstance(img_gray, str):
