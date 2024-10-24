@@ -112,17 +112,15 @@ def post_process(result, extra_result, img_gray):
     extra_results = transforms.Resize(results.shape[-2:])(extra_results) if extra_results is not None else None
 
 
-
-
-
-
-
-
-
     # To PIL
     out:Image.Image = transforms.ToPILImage()(results)
     extra_out:Image.Image = transforms.ToPILImage()(extra_results) if extra_results is not None else None
-    out = Image.blend(out, extra_out, 0.40) if extra_results is not None else out
+    if extra_results is not None:
+      out = mmcv.image.adjust_contrast(np.asarray(out), 1.1)
+      out = Image.fromarray(out)
+      extra_out = mmcv.image.adjust_contrast(np.asarray(extra_out), 0.9)
+      extra_out = Image.fromarray(extra_out)
+    out = Image.blend(out, extra_out, 0.35) if extra_results is not None else out
     # img_gray = (img_gray.cpu().numpy()*255).astype('uint8').transpose(1, 2, 0)
     # img_gray = Image.fromarray(img_gray)
 
