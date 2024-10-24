@@ -89,7 +89,7 @@ test_pipeline = [
          keys=['img_gray']),
 ]
 
-demo_pipeline = [
+extra_pipeline = [
     dict(
         type='LoadImageFromFile',
         key='img_gray',
@@ -99,7 +99,7 @@ demo_pipeline = [
     dict(
         type='Resize',
         keys=['img_gray'],
-        scale=(560, 560),
+        scale=(720, 720),
         keep_ratio=False,
         backend='pillow'
     ),
@@ -124,4 +124,5 @@ demo_pipeline = [
 data = dict(
     train=dict(pipeline=train_pipeline),
     val=dict(pipeline=test_pipeline),
-    test=dict(pipeline=test_pipeline))
+    test=dict(pipeline=test_pipeline),
+    extra=dict(pipeline=extra_pipeline))

@@ -90,20 +90,39 @@ def normalize(arr):
             arr[...,i] *= (255.0/(maxval-minval))
     return arr
 
-def post_process(result, img_gray):
-    results = result['img_color_fake'].squeeze(0)
+def post_process(result, extra_result, img_gray):
+    results:torch.Tensor = result['img_color_fake'].squeeze(0)
+    extra_results:torch.Tensor = extra_result['img_color_fake'].squeeze(0) if extra_result is not None else None
 
     # denom
     mean = torch.tensor([0.4850, 0.4560, 0.4060])  # imagenet的均值和方差
     std = torch.tensor([0.2290, 0.2240, 0.2250])
     results = denorm(results.detach(), mean, std)
+    if extra_results is not None:
+      mean = torch.tensor([0.4850, 0.4560, 0.4060])  # imagenet的均值和方差
+      std = torch.tensor([0.2290, 0.2240, 0.2250])
+      extra_results = denorm(extra_results.detach(), mean, std)
 
     # clamp
     results = results.float().clamp(min=0, max=1)
+    extra_results = extra_results.float().clamp(min=0, max=1) if extra_results is not None else None
+
+
+    # resize to results size
+    extra_results = transforms.Resize(results.shape[-2:])(extra_results) if extra_results is not None else None
+
+
+
+
+
+
+
 
 
     # To PIL
     out:Image.Image = transforms.ToPILImage()(results)
+    extra_out:Image.Image = transforms.ToPILImage()(extra_results) if extra_results is not None else None
+    out = Image.blend(out, extra_out, 0.40) if extra_results is not None else out
     # img_gray = (img_gray.cpu().numpy()*255).astype('uint8').transpose(1, 2, 0)
     # img_gray = Image.fromarray(img_gray)
 
@@ -120,8 +139,13 @@ def post_process(result, img_gray):
     final = overlay_color(raw_color, orig_image)
 
     # auto_contrast
-    final = mmcv.image.adjust_contrast(np.asarray(final), 0.9)
-    final = Image.fromarray(final)
+    # final = mmcv.image.adjust_color(np.asarray(final), 1.1)
+    # final = Image.fromarray(final)
+    # final = mmcv.image.adjust_contrast(np.asarray(final), 1.2)
+    # final = Image.fromarray(final)
+
+    # final = mmcv.image.adjust_contrast(np.asarray(final), 0.95)
+    # final = Image.fromarray(final)
 
     #normalize
     # final = normalize(np.asarray(final))
@@ -140,7 +164,7 @@ def post_process(result, img_gray):
     return None
 
 
-def colorization_inference(model, img, device='cuda:0'):
+def colorization_inference(model, img, device='cuda:0', apply_extra=False):
     """Inference image with the model.
 
     Args:
@@ -155,41 +179,51 @@ def colorization_inference(model, img, device='cuda:0'):
     # device = next(model.parameters()).device  # model device
 
     # build the data pipeline
-    if model.cfg.get('demo_pipeline', None):
-        test_pipeline = model.cfg.demo_pipeline
-    elif model.cfg.get('test_pipeline', None):
+    if model.cfg.get('test_pipeline', None):
         test_pipeline = model.cfg.test_pipeline
     else:
         test_pipeline = model.cfg.val_pipeline
 
+    if model.cfg.get('extra_pipeline', None):
+        extra_pipeline = model.cfg.extra_pipeline
 
     # remove gt from test_pipeline
     keys_to_remove = ['gt', 'gt_path']
     for key in keys_to_remove:
-        for pipeline in list(test_pipeline):
-            if 'key' in pipeline and key == pipeline['key']:
-                test_pipeline.remove(pipeline)
-            if 'keys' in pipeline and key in pipeline['keys']:
-                pipeline['keys'].remove(key)
-                if len(pipeline['keys']) == 0:
-                    test_pipeline.remove(pipeline)
-            if 'meta_keys' in pipeline and key in pipeline['meta_keys']:
-                pipeline['meta_keys'].remove(key)
+        for pipelines in [test_pipeline, extra_pipeline]:
+          for pipeline in list(pipelines):
+              if 'key' in pipeline and key == pipeline['key']:
+                  pipelines.remove(pipeline)
+              if 'keys' in pipeline and key in pipeline['keys']:
+                  pipeline['keys'].remove(key)
+                  if len(pipeline['keys']) == 0:
+                      pipelines.remove(pipeline)
+              if 'meta_keys' in pipeline and key in pipeline['meta_keys']:
+                  pipeline['meta_keys'].remove(key)
 
     # build the data pipeline
     test_pipeline = Compose(test_pipeline)
+    extra_pipeline = Compose(extra_pipeline) if apply_extra else None
 
     # prepare data
     data = None
+    extra_data = None
     if isinstance(img, str):
         data = dict(img_gray_path=img)
+        if apply_extra:
+          extra_data = dict(img_gray_path=img)
     if isinstance(img, np.ndarray):
         data = dict(img_gray=img)
+        if apply_extra:
+          extra_data = dict(img_gray=img)
     data = test_pipeline(data)
+    extra_data = extra_pipeline(extra_data) if apply_extra else None
     if device == 'cpu':
       data = collate([data], samples_per_gpu=1)
+      extra_data = collate([extra_data], samples_per_gpu=1) if apply_extra else None
     else:
       data = scatter(collate([data], samples_per_gpu=1), [device])[0]
+      extra_data = scatter(collate([extra_data], samples_per_gpu=1), [device])[0] if apply_extra else None
     # # forward the model
     # model.eval()
     # with torch.no_grad():
@@ -198,7 +232,8 @@ def colorization_inference(model, img, device='cuda:0'):
     # forward the model
     with torch.no_grad():
         result = model(test_mode=True, **data)
+        extra_result = model(test_mode=True, **extra_data) if apply_extra else None
 
-    final = post_process(result, img)
+    final = post_process(result, extra_result, img)
 
     return final
