@@ -143,9 +143,9 @@ def post_process(result, extra_result, img_gray):
     # final = Image.fromarray(final)
     # final = mmcv.image.adjust_contrast(np.asarray(final), 1.2)
     # final = Image.fromarray(final)
-
-    # final = mmcv.image.adjust_contrast(np.asarray(final), 0.95)
-    # final = Image.fromarray(final)
+    if extra_results is None:
+      final = mmcv.image.adjust_contrast(np.asarray(final), 0.9)
+      final = Image.fromarray(final)
 
     #normalize
     # final = normalize(np.asarray(final))
